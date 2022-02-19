@@ -17,6 +17,14 @@ class Point():
             self.x += -1
         elif dir_code == 'E':
             self.x += 1
+        return self
+
+
+@dataclass
+class ItemStats():
+    attack: int
+    defense: int
+    priority: int
 
 
 @dataclass
@@ -33,6 +41,11 @@ class KnightState():
             self.position = None
             self.attack = 0
             self.defense = 0
+
+    def equip_item(self, item: str, item_stats: ItemStats) -> None:
+        self.item = item
+        self.attack += item_stats.attack
+        self.defense += item_stats.defense
 
 
 @dataclass
@@ -51,13 +64,6 @@ class Knight():
 class ItemState():
     position: Point
     equipped: bool = False
-
-
-@dataclass
-class ItemStats():
-    attack: int
-    defense: int
-    priority: int
 
 
 @dataclass
@@ -118,12 +124,18 @@ class BattleKnights():
         if self.status[knight].status == 'DROWNED':
             return self.status
 
-        self.status[knight].position.move(dir_code)
+        new_position = self.status[knight].position.move(dir_code)
 
         if not (0 <= self.status[knight].position.x < self.size.x and
                 0 <= self.status[knight].position.y < self.size.y):
 
             self.status[knight].update_status('DROWNED')
+
+        if new_position in self.board_I and self.status[knight].item is None:
+            item = self.board_I[new_position]
+            item_stats = self.items_stats[item]
+            self.status[item].equipped = True
+            self.status[knight].equip_item(item, item_stats)
 
         return self.status
 

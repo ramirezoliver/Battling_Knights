@@ -1,7 +1,7 @@
-from app.main import BattleKnights, Knight, Point
+from app.main import BattleKnights, Point, Knight, Item
 
 
-def test_movement():
+def test_knight_move():
     test_game = BattleKnights(Point(2, 2))
     test_game.add_knight(Knight('R', 'red', (0, 0)))
 
@@ -19,6 +19,18 @@ def test_movement():
 
     status = test_game.game_step('R', 'W')
     assert status['red'].position == Point(0, 0)
+
+
+def test_equip_item():
+    test_game = BattleKnights(Point(2, 2))
+    test_game.add_knight(Knight('R', 'red', (0, 0)))
+    test_game.add_item(Item('magic_staff', (1, 1, 2), (0, 1)))
+
+    status = test_game.game_step('R', 'E')
+    assert status['magic_staff'].equipped is True
+    assert status['red'].item == 'magic_staff'
+    assert status['red'].attack == 2
+    assert status['red'].defense == 2
 
 
 def test_drown():
