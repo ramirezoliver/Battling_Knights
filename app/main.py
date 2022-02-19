@@ -91,8 +91,20 @@ class BattleKnights():
         return json.dumps(status)
 
     def game_step(self, KN_code: str, dir_code: str) -> Dict:
-        name = self.KN_code_map[KN_code]
-        self.status[name].position.move(dir_code)
+        knight = self.KN_code_map[KN_code]
+
+        if self.status[knight].status == 'DROWNED':
+            return self.status
+
+        self.status[knight].position.move(dir_code)
+
+        if not (0 <= self.status[knight].position.x < self.size.x and
+                0 <= self.status[knight].position.y < self.size.y):
+            self.status[knight].position = None
+            self.status[knight].status = 'DROWNED'
+            self.status[knight].attack = 0
+            self.status[knight].defense = 0
+
         return self.status
 
 
