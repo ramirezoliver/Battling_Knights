@@ -1,12 +1,9 @@
-from app.main import BattleKnights, Knight, KnightState, Point
+from app.main import BattleKnights, Knight, Point
 
 
 def test_movement():
-    test_game = BattleKnights(
-        Point(2, 2),
-        [Knight('R', 'red', KnightState(Point(0, 0)))],
-        []
-    )
+    test_game = BattleKnights(Point(2, 2))
+    test_game.add_knight(Knight('R', 'red', (0, 0)))
 
     assert test_game.status['red'].position == Point(0, 0)
 
@@ -25,12 +22,9 @@ def test_movement():
 
 
 def test_drown():
-    test_game = BattleKnights(
-        size=Point(2, 2),
-        knights=[Knight('R', 'red', KnightState(Point(0, 0))),
-                 Knight('B', 'blue', KnightState(Point(1, 1)))],
-        items=[]
-    )
+    test_game = BattleKnights(Point(2, 2))
+    test_game.add_knight(Knight('R', 'red', (0, 0)))
+    test_game.add_knight(Knight('B', 'blue', (1, 1)))
 
     status = test_game.game_step('R', 'N')
     assert status['red'].position is None
@@ -46,12 +40,10 @@ def test_drown():
 
 
 def test_drown_ignore_further_moves():
-    test_game = BattleKnights(
-        size=Point(2, 2),
-        knights=[Knight('R', 'red', KnightState(Point(0, 0))),
-                 Knight('B', 'blue', KnightState(Point(1, 1)))],
-        items=[]
-    )
+    test_game = BattleKnights(Point(2, 2))
+    test_game.add_knight(Knight('R', 'red', (0, 0)))
+    test_game.add_knight(Knight('B', 'blue', (1, 1)))
+
     status = test_game.game_step('R', 'N')
     assert status['red'].status == 'DROWNED'
 

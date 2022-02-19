@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import Dict, Any, Tuple
 import json
 from dataclasses import dataclass, astuple
 
@@ -21,11 +21,18 @@ class Point():
 
 @dataclass
 class KnightState():
-    position: Point
+    position: Any
     status: str = 'LIVE'
     item: Any = None
     attack: int = 1
     defense: int = 1
+
+    def update_status(self, new_status: str) -> None:
+        self.status = new_status
+        if new_status == 'DROWNED':
+            self.position = None
+            self.attack = 0
+            self.defense = 0
 
 
 @dataclass
@@ -33,6 +40,11 @@ class Knight():
     code: str
     name: str
     state: KnightState
+
+    def __init__(self, code: str, name: str, yx_tuple: Tuple):
+        self.code = code
+        self.name = name
+        self.state = KnightState(Point(*yx_tuple))
 
 
 @dataclass
@@ -54,32 +66,42 @@ class Item():
     stats: ItemStats
     state: ItemState
 
+    def __init__(self, name: str, item_stats: Tuple, yx_tuple: Tuple):
+        self.name = name
+        self.stats = ItemStats(*item_stats)
+        self.state = ItemState(Point(*yx_tuple))
+
 
 class BattleKnights():
-    def __init__(self, size: Point, knights: List[Knight], items: List[Item]):
-
-        status_knights = {KN.name: KN.state for KN in knights}
-        status_items = {IT.name: IT.state for IT in knights}
-
-        self.status: Dict = {**status_knights, **status_items}
+    def __init__(self, size: Point):
+        self.status: Dict = {}
         self.size: Point = size
 
         # positions of LIVE Knights
-        self.board_KN = {KN.state.position: KN.name for KN in knights}
-        self.KN_code_map = {KN.code: KN.name for KN in knights}
+        self.board_K: Dict = {}
+        self.K_code_map: Dict = {}
 
         # item A/D table
-        self.items_stats = {IT.name: IT.stats for IT in items}
-
+        self.items_stats: Dict = {}
         # positions of free Items
-        self.board_IT = {IT.state.position: IT.name for IT in items}
+        self.board_I: Dict = {}
+
+    def add_knight(self, knight: Knight):
+        self.status[knight.name] = knight.state
+        self.board_K[knight.state.position] = knight.name
+        self.K_code_map[knight.code] = knight.name
+
+    def add_item(self, item: Item):
+        self.status[item.name] = item.state
+        self.board_I[item.state.position] = item.name
+        self.items_stats[item.name] = item.stats
 
     def progress_game(self, line: str, lineno: int) -> Dict:
         DIRECTIONS: set = {"N", "S", "W", "E"}
         step = line.split(':')
         if len(step) != 2:
             raise Exception(f'Invalid step format in line {lineno}')
-        elif step[0] not in self.KN_code_map:
+        elif step[0] not in self.K_code_map:
             raise Exception(f'Invalid knight code in line {lineno}')
         elif step[1] not in DIRECTIONS:
             raise Exception(f'Invalid direction in line {lineno}')
@@ -91,7 +113,7 @@ class BattleKnights():
         return json.dumps(status)
 
     def game_step(self, KN_code: str, dir_code: str) -> Dict:
-        knight = self.KN_code_map[KN_code]
+        knight = self.K_code_map[KN_code]
 
         if self.status[knight].status == 'DROWNED':
             return self.status
@@ -100,25 +122,17 @@ class BattleKnights():
 
         if not (0 <= self.status[knight].position.x < self.size.x and
                 0 <= self.status[knight].position.y < self.size.y):
-            self.status[knight].position = None
-            self.status[knight].status = 'DROWNED'
-            self.status[knight].attack = 0
-            self.status[knight].defense = 0
+
+            self.status[knight].update_status('DROWNED')
 
         return self.status
 
 
 if __name__ == '__main__':
-    game = BattleKnights(
-        Point(8, 8),
-        [
-            Knight('R', 'red', KnightState(Point(1, 2))),
-            Knight('B', 'blue', KnightState(Point(1, 5)))
-        ],
-        [
-            Item('magic_staff', ItemStats(1, 0, 0), ItemState(Point(0, 0)))
-        ]
-    )
+    game = BattleKnights(Point(8, 8))
+    game.add_knight(Knight('R', 'red', (0, 1)))
+    game.add_knight(Knight('R', 'red', (0, 1)))
+    game.add_item(Item('magic_staff', (1, 0, 0), (0, 0)))
 
     with open("moves.txt") as f:
         for lineno, line in enumerate(f, start=1):
