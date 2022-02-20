@@ -1,4 +1,5 @@
-from app.main import BattleKnights, Point
+from app.Point import Point
+from app.Game import BattleKnights
 
 
 def test_movement_knight():

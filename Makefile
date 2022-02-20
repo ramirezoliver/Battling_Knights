@@ -4,4 +4,4 @@ test:
 
 .PHONY: run_moves
 run_moves:
-	python app/main.py
+	python -m app.main
