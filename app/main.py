@@ -3,21 +3,10 @@ import json
 from dataclasses import dataclass, astuple
 
 
-@dataclass(unsafe_hash=True)
+@dataclass()
 class Point():
     y: int
     x: int
-
-    def move(self, dir_code: str):
-        if dir_code == 'N':
-            self.y += -1
-        elif dir_code == 'S':
-            self.y += 1
-        elif dir_code == 'W':
-            self.x += -1
-        elif dir_code == 'E':
-            self.x += 1
-        return self
 
 
 @dataclass
@@ -28,16 +17,33 @@ class ItemStats():
 
 
 @dataclass
-class KnightState():
+class ItemState():
+    position: Point
+    equipped: bool = False
+
+
+@dataclass
+class Knight():
     position: Any
     status: str = 'LIVE'
     item: Any = None
     attack: int = 1
     defense: int = 1
 
+    def move(self, dir_code: str):
+        if dir_code == 'N':
+            self.position.y += -1
+        elif dir_code == 'S':
+            self.position.y += 1
+        elif dir_code == 'W':
+            self.position.x += -1
+        elif dir_code == 'E':
+            self.position.x += 1
+        return self.position
+
     def update_status(self, new_status: str) -> None:
         self.status = new_status
-        if new_status == 'DROWNED':
+        if new_status in ('DROWNED', 'DEAD'):
             self.position = None
             self.attack = 0
             self.defense = 0
@@ -46,36 +52,6 @@ class KnightState():
         self.item = item
         self.attack += item_stats.attack
         self.defense += item_stats.defense
-
-
-@dataclass
-class Knight():
-    code: str
-    name: str
-    state: KnightState
-
-    def __init__(self, code: str, name: str, yx_tuple: Tuple):
-        self.code = code
-        self.name = name
-        self.state = KnightState(Point(*yx_tuple))
-
-
-@dataclass
-class ItemState():
-    position: Point
-    equipped: bool = False
-
-
-@dataclass
-class Item():
-    name: str
-    stats: ItemStats
-    state: ItemState
-
-    def __init__(self, name: str, item_stats: Tuple, yx_tuple: Tuple):
-        self.name = name
-        self.stats = ItemStats(*item_stats)
-        self.state = ItemState(Point(*yx_tuple))
 
 
 class BattleKnights():
@@ -88,19 +64,49 @@ class BattleKnights():
         self.K_code_map: Dict = {}
 
         # item A/D table
-        self.items_stats: Dict = {}
+        self.items_map: Dict = {}
         # positions of free Items
         self.board_I: Dict = {}
 
-    def add_knight(self, knight: Knight):
-        self.status[knight.name] = knight.state
-        self.board_K[knight.state.position] = knight.name
-        self.K_code_map[knight.code] = knight.name
+    def add_knight(self, code: str, name: str, yx_tuple: Tuple):
+        knight = Knight(Point(*yx_tuple))
+        self.status[name] = knight
+        self.board_K[astuple(knight.position)] = name
+        self.K_code_map[code] = name
 
-    def add_item(self, item: Item):
-        self.status[item.name] = item.state
-        self.board_I[item.state.position] = item.name
-        self.items_stats[item.name] = item.stats
+    def add_item(self, name: str, item_stats: Tuple, yx_tuple: Tuple):
+        item = ItemState(Point(*yx_tuple))
+        self.status[name] = item
+        self.items_map[name] = ItemStats(*item_stats)
+
+        item_position = astuple(item.position)
+        if item_position in self.board_I:
+            self.board_I[item_position].append(name)
+        else:
+            self.board_I[item_position] = [name]
+
+    def get_highest_priority_item(self, position: Point):
+        present_items = self.board_I[astuple(position)]
+        item = present_items[0]
+        if len(present_items) > 1:
+            index_item = 0
+            for i in range(1, len(present_items)):
+                x = present_items[i]
+                if self.items_map[x].priority > self.items_map[item].priority:
+                    item = x
+                    index_item = i
+            return self.board_I[astuple(position)].pop(index_item)
+        else:
+            self.board_I.pop(astuple(position))
+            return item
+
+    def drop_item(self, item: str, item_position: Tuple):
+        if item is not None:
+            self.status[item].equipped = False
+            if item_position in self.board_I:
+                self.board_I[item_position].append(item)
+            else:
+                self.board_I[item_position] = [item]
 
     def progress_game(self, line: str, lineno: int) -> Dict:
         DIRECTIONS: set = {"N", "S", "W", "E"}
@@ -121,30 +127,55 @@ class BattleKnights():
     def game_step(self, KN_code: str, dir_code: str) -> Dict:
         knight = self.K_code_map[KN_code]
 
-        if self.status[knight].status == 'DROWNED':
+        if self.status[knight].status != 'LIVE':
             return self.status
 
-        new_position = self.status[knight].position.move(dir_code)
+        self.board_K.pop(astuple(self.status[knight].position))
+        equipped_item = self.status[knight].item
+        new_position = self.status[knight].move(dir_code)
+        board_key = astuple(new_position)
 
         if not (0 <= self.status[knight].position.x < self.size.x and
                 0 <= self.status[knight].position.y < self.size.y):
 
             self.status[knight].update_status('DROWNED')
+            self.drop_item(equipped_item, board_key)
+            return self.status
 
-        if new_position in self.board_I and self.status[knight].item is None:
-            item = self.board_I[new_position]
-            item_stats = self.items_stats[item]
+        if equipped_item:
+            self.status[equipped_item].position = new_position
+        elif board_key in self.board_I and equipped_item is None:
+            item = self.get_highest_priority_item(new_position)
+            item_stats = self.items_map[item]
             self.status[item].equipped = True
             self.status[knight].equip_item(item, item_stats)
+
+        if board_key in self.board_K:
+            opponent = self.board_K[board_key]
+            opponent_item = self.status[opponent].item
+            if self.status[knight].attack + .5 > self.status[opponent].defense:
+                self.status[opponent].update_status('DEAD')
+                self.drop_item(opponent_item, board_key)
+                self.board_K[board_key] = knight
+            else:
+                self.status[knight].update_status('DEAD')
+                self.drop_item(equipped_item, board_key)
+        else:
+            self.board_K[board_key] = knight
 
         return self.status
 
 
 if __name__ == '__main__':
     game = BattleKnights(Point(8, 8))
-    game.add_knight(Knight('R', 'red', (0, 1)))
-    game.add_knight(Knight('R', 'red', (0, 1)))
-    game.add_item(Item('magic_staff', (1, 0, 0), (0, 0)))
+    game.add_knight('R', 'red', (0, 0))
+    game.add_knight('B', 'blue', (0, 2))
+    game.add_item('magic_staff', (1, 1, 2), (0, 1))
+    game.add_item('axe', (2, 0, 3), (0, 1))
+
+    print(game.board_I)
+    print(game.board_K)
+    print(game.status_json())
 
     with open("moves.txt") as f:
         for lineno, line in enumerate(f, start=1):
@@ -154,5 +185,6 @@ if __name__ == '__main__':
             elif line == "GAME-START":
                 continue
             game.progress_game(line, lineno)
-
+            print(game.board_I)
+            print(game.board_K)
             print(game.status_json())
