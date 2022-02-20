@@ -68,7 +68,7 @@ def test_item_drop_when_drown():
     assert status['magic_staff'].equipped is True
     assert status['red'].item == 'magic_staff'
 
-    status = test_game.game_step('R', 'N')
+    status = test_game.game_step('R', 'E')
     assert status['magic_staff'].equipped is False
     assert status['magic_staff'].position == Point(0, 1)
     assert status['red'].status == 'DROWNED'
@@ -113,6 +113,6 @@ def test_drop_item_dead():
 
     status = test_game.game_step('B', 'W')
     assert status['red'].status == 'DEAD'
-    assert status['red'].position == Point(0, 0)
+    assert status['red'].item is None
     assert status['axe'].equipped is False
     assert status['axe'].position == Point(0, 0)

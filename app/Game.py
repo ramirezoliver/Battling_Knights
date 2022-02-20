@@ -59,6 +59,7 @@ class BattlingKnights():
     def drop_item(self, knight: str):
         item = self.status[knight].item
         if item is not None:
+            self.status[knight].item = None
             self.status[item].equipped = False
             self.add_item_to_board(item, self.status[item].position)
 
@@ -91,10 +92,13 @@ class BattlingKnights():
 
             self.status[knight].update_status('DROWNED')
             self.drop_item(knight)
+
             return self.status
 
         if equipped_item:
-            self.status[equipped_item].position = new_position
+            new_point = Point(new_position.y, new_position.x)
+            self.status[equipped_item].position = new_point
+
         elif position_key in self.cells_items and equipped_item is None:
             self.acquire_item(knight)
 
@@ -135,3 +139,4 @@ class BattlingKnights():
                     raise Exception(f'Invalid direction in line {lineno}')
 
                 self.game_step(step[0], step[1])
+
