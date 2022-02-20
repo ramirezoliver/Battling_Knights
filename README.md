@@ -34,7 +34,7 @@ Most of these uses `@dataclass` decorator introduced in python 3.7 (PEP557)
     + `move`: Manipulate Point coordinate in response to commands
     + `equip_item`: Update attribute upon equipping an item
 * `BattlingKnights`:  Contains logic for the game
-    + Important Data
+    + Notable class data
         + `status`: Contains current status of game
         + `cells_knights`: position mapping of LIVE knights on the board
         + `cells_items`: position mapping of free items on the board

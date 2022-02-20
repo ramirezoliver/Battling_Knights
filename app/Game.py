@@ -139,4 +139,3 @@ class BattlingKnights():
                     raise Exception(f'Invalid direction in line {lineno}')
 
                 self.game_step(step[0], step[1])
-
