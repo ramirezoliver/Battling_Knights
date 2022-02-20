@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Any
 from app.Item import ItemStats
+from app.Point import Point
 
 
 @dataclass
@@ -11,7 +12,7 @@ class Knight():
     attack: int = 1
     defense: int = 1
 
-    def move(self, dir_code: str):
+    def move(self, dir_code: str) -> Point:
         if dir_code == 'N':
             self.position.y += -1
         elif dir_code == 'S':
