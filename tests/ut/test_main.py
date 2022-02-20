@@ -1,9 +1,9 @@
 from app.Point import Point
-from app.Game import BattleKnights
+from app.Game import BattlingKnights
 
 
 def test_movement_knight_drown():
-    test_game = BattleKnights(Point(2, 2))
+    test_game = BattlingKnights(Point(2, 2))
     test_game.add_knight('R', 'red', (0, 0))
     test_game.add_knight('B', 'blue', (1, 1))
 
@@ -17,7 +17,7 @@ def test_movement_knight_drown():
 
 
 def test_drown_ignore_further_moves():
-    test_game = BattleKnights(Point(2, 2))
+    test_game = BattlingKnights(Point(2, 2))
     test_game.add_knight('R', 'red', (0, 0))
 
     status = test_game.game_step('R', 'N')
@@ -28,7 +28,7 @@ def test_drown_ignore_further_moves():
 
 
 def test_item_equip():
-    test_game = BattleKnights(Point(2, 2))
+    test_game = BattlingKnights(Point(2, 2))
     test_game.add_knight('R', 'red', (0, 0))
     test_game.add_item('magic_staff', (1, 1, 2), (0, 1))
 
@@ -48,7 +48,7 @@ def test_item_equip():
 
 
 def test_item_select_higher_priority():
-    test_game = BattleKnights(Point(2, 2))
+    test_game = BattlingKnights(Point(2, 2))
     test_game.add_knight('R', 'red', (0, 0))
     test_game.add_item('magic_staff', (1, 1, 2), (0, 1))
     test_game.add_item('axe', (2, 0, 3), (0, 1))
@@ -60,7 +60,7 @@ def test_item_select_higher_priority():
 
 
 def test_item_drop_when_drown():
-    test_game = BattleKnights(Point(2, 2))
+    test_game = BattlingKnights(Point(2, 2))
     test_game.add_knight('R', 'red', (0, 0))
     test_game.add_item('magic_staff', (1, 1, 2), (0, 1))
 
@@ -75,7 +75,7 @@ def test_item_drop_when_drown():
 
 
 def test_pick_item_before_battle():
-    test_game = BattleKnights(Point(2, 2))
+    test_game = BattlingKnights(Point(2, 2))
     test_game.add_knight('R', 'red', (0, 0))
     test_game.add_item('helmet', (0, 1, 0), (0, 0))
     test_game.acquire_item('red')
@@ -91,7 +91,7 @@ def test_pick_item_before_battle():
 
 
 def test_knight_status_dead():
-    test_game = BattleKnights(Point(2, 2))
+    test_game = BattlingKnights(Point(2, 2))
     test_game.add_knight('R', 'red', (0, 0))
     test_game.add_knight('B', 'blue', (0, 1))
 
@@ -101,7 +101,7 @@ def test_knight_status_dead():
 
 
 def test_drop_item_dead():
-    test_game = BattleKnights(Point(2, 2))
+    test_game = BattlingKnights(Point(2, 2))
     test_game.add_knight('R', 'red', (0, 0))
     test_game.add_knight('B', 'blue', (0, 1))
     test_game.add_item('axe', (2, 0, 3), (0, 0))
@@ -116,4 +116,4 @@ def test_drop_item_dead():
     assert status['red'].position == Point(0, 0)
     assert status['axe'].equipped is False
 
-    assert 'axe' in test_game.board_I[(0, 0)]
+    assert 'axe' in test_game.cells_items[(0, 0)]

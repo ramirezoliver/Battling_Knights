@@ -1,4 +1,4 @@
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 import json
 import re
 from dataclasses import astuple
@@ -7,25 +7,20 @@ from app.Knight import Knight
 from app.Item import ItemState, ItemStats
 
 
-class BattleKnights():
+class BattlingKnights():
     def __init__(self, size: Point):
-        self.status: Dict = {}
         self.size: Point = size
-
-        # positions of LIVE Knights
-        self.board_K: Dict = {}
-        self.K_code_map: Dict = {}
-
-        # item A/D table
-        self.items_map: Dict = {}
-        # positions of free Items
-        self.board_I: Dict = {}
+        self.status: Dict = {}
+        self.cells_knights: Dict[Tuple, str] = {}
+        self.cells_items: Dict[Tuple, List[str]] = {}
+        self.knight_code_map: Dict[str, str] = {}
+        self.items_map: Dict[str, ItemStats] = {}
 
     def add_knight(self, code: str, name: str, yx_tuple: Tuple):
         knight = Knight(Point(*yx_tuple))
         self.status[name] = knight
-        self.board_K[astuple(knight.position)] = name
-        self.K_code_map[code] = name
+        self.cells_knights[astuple(knight.position)] = name
+        self.knight_code_map[code] = name
 
     def add_item(self, name: str, item_stats: Tuple, yx_tuple: Tuple):
         item = ItemState(Point(*yx_tuple))
@@ -36,13 +31,13 @@ class BattleKnights():
 
     def add_item_to_board(self, name: str, position: Point):
         item_position = astuple(position)
-        if item_position in self.board_I:
-            self.board_I[item_position].append(name)
+        if item_position in self.cells_items:
+            self.cells_items[item_position].append(name)
         else:
-            self.board_I[item_position] = [name]
+            self.cells_items[item_position] = [name]
 
     def get_highest_priority_item(self, position: Point):
-        present_items = self.board_I[astuple(position)]
+        present_items = self.cells_items[astuple(position)]
         item = present_items[0]
         if len(present_items) > 1:
             index_item = 0
@@ -51,9 +46,9 @@ class BattleKnights():
                 if self.items_map[x].priority > self.items_map[item].priority:
                     item = x
                     index_item = i
-            self.board_I[astuple(position)].pop(index_item)
+            self.cells_items[astuple(position)].pop(index_item)
         else:
-            self.board_I.pop(astuple(position))
+            self.cells_items.pop(astuple(position))
         return item
 
     def acquire_item(self, knight: str):
@@ -77,7 +72,7 @@ class BattleKnights():
 
         self.status[loser].update_status('DEAD')
         self.drop_item(loser)
-        self.board_K[astuple(position)] = winner
+        self.cells_knights[astuple(position)] = winner
         return winner
 
     def status_json(self):
@@ -91,15 +86,15 @@ class BattleKnights():
         return _json
 
     def game_step(self, KN_code: str, dir_code: str) -> Dict:
-        knight = self.K_code_map[KN_code]
+        knight = self.knight_code_map[KN_code]
 
         if self.status[knight].status in {'DROWNED', 'DEAD'}:
             return self.status
 
-        self.board_K.pop(astuple(self.status[knight].position))
+        self.cells_knights.pop(astuple(self.status[knight].position))
         new_position = self.status[knight].move(dir_code)
         equipped_item = self.status[knight].item
-        board_key = astuple(new_position)
+        position_key = astuple(new_position)
 
         if not (0 <= self.status[knight].position.x < self.size.x and
                 0 <= self.status[knight].position.y < self.size.y):
@@ -110,14 +105,14 @@ class BattleKnights():
 
         if equipped_item:
             self.status[equipped_item].position = new_position
-        elif board_key in self.board_I and equipped_item is None:
+        elif position_key in self.cells_items and equipped_item is None:
             self.acquire_item(knight)
 
-        if board_key in self.board_K:
-            opponent = self.board_K[board_key]
+        if position_key in self.cells_knights:
+            opponent = self.cells_knights[position_key]
             self.battle(knight, opponent)
         else:
-            self.board_K[board_key] = knight
+            self.cells_knights[position_key] = knight
 
         return self.status
 
@@ -134,7 +129,7 @@ class BattleKnights():
                 step = line.split(':')
                 if len(step) != 2:
                     raise Exception(f'Invalid step format in line {lineno}')
-                elif step[0] not in self.K_code_map:
+                elif step[0] not in self.knight_code_map:
                     raise Exception(f'Invalid knight code in line {lineno}')
                 elif step[1] not in DIRECTIONS:
                     raise Exception(f'Invalid direction in line {lineno}')

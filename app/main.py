@@ -1,8 +1,8 @@
 from app.Point import Point
-from app.Game import BattleKnights
+from app.Game import BattlingKnights
 
 if __name__ == '__main__':
-    game = BattleKnights(Point(8, 8))
+    game = BattlingKnights(Point(8, 8))
     game.add_knight('R', 'red', (0, 0))
     game.add_knight('B', 'blue', (7, 0))
     game.add_knight('G', 'green', (7, 7))
@@ -13,5 +13,8 @@ if __name__ == '__main__':
     game.add_item('helmet', (2, 0, 0), (5, 5))
 
     game.run_moves_from_file('moves.txt')
+
     with open('final_state.json', 'w') as f:
-        f.write(game.status_json())
+        status_json = game.status_json()
+        f.write(status_json)
+        print(status_json)
