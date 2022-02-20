@@ -75,16 +75,6 @@ class BattlingKnights():
         self.cells_knights[astuple(position)] = winner
         return winner
 
-    def status_json(self):
-        status = {k: astuple(v) for k, v in self.status.items()}
-        _json = json.dumps(status)
-
-        # prettify new line per key
-        _json = re.sub(r"(\"[a-zA-Z0-9_]*\":)",  r"\n    \1", _json)
-        # prettify new line closing }
-        _json = re.sub(r"(}$)",  r"\n\1", _json)
-        return _json
-
     def game_step(self, KN_code: str, dir_code: str) -> Dict:
         knight = self.knight_code_map[KN_code]
 
@@ -115,6 +105,16 @@ class BattlingKnights():
             self.cells_knights[position_key] = knight
 
         return self.status
+
+    def status_json(self):
+        status = {k: astuple(v) for k, v in self.status.items()}
+        _json = json.dumps(status)
+
+        # prettify new line per key
+        _json = re.sub(r"(\"[a-zA-Z0-9_]*\":)",  r"\n    \1", _json)
+        # prettify new line closing }
+        _json = re.sub(r"(}$)",  r"\n\1", _json)
+        return _json
 
     def run_moves_from_file(self, path: str = "moves.txt"):
         DIRECTIONS: set = {"N", "S", "W", "E"}

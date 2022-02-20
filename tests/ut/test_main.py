@@ -115,5 +115,4 @@ def test_drop_item_dead():
     assert status['red'].status == 'DEAD'
     assert status['red'].position == Point(0, 0)
     assert status['axe'].equipped is False
-
-    assert 'axe' in test_game.cells_items[(0, 0)]
+    assert status['axe'].position == Point(0, 0)
