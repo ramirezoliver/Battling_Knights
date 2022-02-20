@@ -1,6 +1,7 @@
 GAME-START
-R:E
-B:W
-R:E
-B:W
+R:S
+R:S
+B:E
+G:N
+Y:N
 GAME-END

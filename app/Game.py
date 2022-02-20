@@ -1,5 +1,6 @@
 from typing import Dict, Tuple
 import json
+import re
 from dataclasses import astuple
 from app.Point import Point
 from app.Knight import Knight
@@ -79,21 +80,15 @@ class BattleKnights():
         self.board_K[astuple(position)] = winner
         return winner
 
-    def progress_game(self, line: str, lineno: int) -> Dict:
-        DIRECTIONS: set = {"N", "S", "W", "E"}
-        step = line.split(':')
-        if len(step) != 2:
-            raise Exception(f'Invalid step format in line {lineno}')
-        elif step[0] not in self.K_code_map:
-            raise Exception(f'Invalid knight code in line {lineno}')
-        elif step[1] not in DIRECTIONS:
-            raise Exception(f'Invalid direction in line {lineno}')
-        self.game_step(step[0], step[1])
-        return self.status
-
     def status_json(self):
         status = {k: astuple(v) for k, v in self.status.items()}
-        return json.dumps(status)
+        _json = json.dumps(status)
+
+        # prettify new line per key
+        _json = re.sub(r"(\"[a-zA-Z0-9_]*\":)",  r"\n    \1", _json)
+        # prettify new line closing }
+        _json = re.sub(r"(}$)",  r"\n\1", _json)
+        return _json
 
     def game_step(self, KN_code: str, dir_code: str) -> Dict:
         knight = self.K_code_map[KN_code]
@@ -125,3 +120,23 @@ class BattleKnights():
             self.board_K[board_key] = knight
 
         return self.status
+
+    def run_moves_from_file(self, path: str = "moves.txt"):
+        DIRECTIONS: set = {"N", "S", "W", "E"}
+        with open(path) as f:
+            for lineno, line in enumerate(f, start=1):
+                line = line.strip()
+                if line == "GAME-START":
+                    continue
+                elif line == "GAME-END":
+                    break
+
+                step = line.split(':')
+                if len(step) != 2:
+                    raise Exception(f'Invalid step format in line {lineno}')
+                elif step[0] not in self.K_code_map:
+                    raise Exception(f'Invalid knight code in line {lineno}')
+                elif step[1] not in DIRECTIONS:
+                    raise Exception(f'Invalid direction in line {lineno}')
+
+                self.game_step(step[0], step[1])
