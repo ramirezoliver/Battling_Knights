@@ -5,7 +5,7 @@
 
 Command line from root directory
 ```sh
-python -m main.app
+python -m app.main
 ```
 
 Using `make` and` Makefile`
